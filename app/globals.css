@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 180 30% 98%;
+    --foreground: 180 60% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 180 60% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 180 60% 15%;
+
+    --primary: 180 60% 30%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 180 30% 95%;
+    --secondary-foreground: 180 60% 25%;
+
+    --muted: 180 20% 96%;
+    --muted-foreground: 180 20% 40%;
+
+    --accent: 20 100% 60%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 180 30% 92%;
+    --input: 180 30% 92%;
+    --ring: 20 100% 60%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 180 15% 10%;
+    --foreground: 20 30% 90%;
+
+    --card: 180 15% 12%;
+    --card-foreground: 20 30% 90%;
+
+    --popover: 180 15% 12%;
+    --popover-foreground: 20 30% 90%;
+
+    --primary: 180 60% 40%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 180 15% 20%;
+    --secondary-foreground: 20 30% 90%;
+
+    --muted: 180 15% 20%;
+    --muted-foreground: 180 10% 70%;
+
+    --accent: 20 100% 60%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 180 15% 20%;
+    --input: 180 15% 20%;
+    --ring: 20 100% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply tracking-tight;
+  }
+}
+
+/* Google Translate Widget Styling */
+.goog-te-banner-frame {
+  display: none !important;
+}
+
+.goog-te-menu-value span {
+  display: none !important;
+}
+
+.goog-te-menu-value span:first-child {
+  display: inline !important;
+}
+
+.goog-te-gadget-icon {
+  display: none !important;
+}
+
+body {
+  top: 0 !important;
+}
+
+/* Hide Google Translate attribution */
+.VIpgJd-ZVi9od-l4eHX-hSRGPd,
+.VIpgJd-ZVi9od-ORHb-OEVmcd {
+  display: none !important;
+}
+
+/* Fix for translated content */
+.translated-ltr {
+  margin-top: 0 !important;
+}
+
+.translated-rtl {
+  margin-top: 0 !important;
+}
+
+/* Hide the skiptranslate class */
+.skiptranslate {
+  display: none !important;
+}
