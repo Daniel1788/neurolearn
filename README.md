@@ -15,9 +15,6 @@
  **NeuroLearn** este o platformă educațională modernă, centrată pe autocunoaștere și învățare eficientă. Utilizatorii își pot descoperi stilul propriu de învățare datorită unor instrumente inspirate din neuroștiință și psihologie cognitivă.
 
 
-
-
-
 ##  Tehnologii
 
 - **Front-end**: React + Next.js

@@ -300,7 +300,7 @@ export default function AdminDashboard() {
                 <Label htmlFor="content_path">Calea către conținut</Label>
                 <Input
                   id="content_path"
-                  placeholder="ex: /lessons/lesson-1.md"
+                  placeholder="ex: numele-primei-lectii"
                   value={formData.content_path}
                   onChange={(e) => setFormData({ ...formData, content_path: e.target.value })}
                 />
