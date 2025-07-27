@@ -6,6 +6,7 @@ import { CheckCircle, Loader2 } from "lucide-react"
 import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 interface MarkLessonCompleteProps {
   lessonId: string
@@ -16,11 +17,13 @@ interface MarkLessonCompleteProps {
 
 export function MarkLessonComplete({ lessonId, userId, isCompleted, onComplete }: MarkLessonCompleteProps) {
   const [loading, setLoading] = useState(false)
+  const [completed, setCompleted] = useState(isCompleted)
   const supabase = createClientSupabaseClient()
   const { toast } = useToast()
+  const router = useRouter()
 
   const handleMarkComplete = async () => {
-    if (isCompleted) return
+    if (completed) return
 
     setLoading(true)
     try {
@@ -96,6 +99,9 @@ export function MarkLessonComplete({ lessonId, userId, isCompleted, onComplete }
         // Don't fail the whole operation if logging fails
       }
 
+      // Update local state to show completed status immediately
+      setCompleted(true)
+
       toast({
         title: "Felicitări! 🎉",
         description: `Ai finalizat lecția și ai câștigat ${xpReward} XP!`,
@@ -104,6 +110,9 @@ export function MarkLessonComplete({ lessonId, userId, isCompleted, onComplete }
       if (onComplete) {
         onComplete()
       }
+
+      // Refresh the page to update all completion states
+      router.refresh()
     } catch (error) {
       console.error("Error completing lesson:", error)
       toast({
@@ -116,15 +125,20 @@ export function MarkLessonComplete({ lessonId, userId, isCompleted, onComplete }
     }
   }
 
-  if (isCompleted) {
+  if (completed) {
     return (
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="flex items-center gap-2 text-green-600 text-sm font-medium"
+        transition={{
+          type: "spring",
+          stiffness: 260,
+          damping: 20,
+        }}
+        className="flex items-center gap-2 text-green-600 text-sm font-medium bg-green-50 dark:bg-green-950/20 px-4 py-2 rounded-lg border border-green-200 dark:border-green-800"
       >
         <CheckCircle className="h-4 w-4" />
-        Finalizat
+        Lecție finalizată
       </motion.div>
     )
   }

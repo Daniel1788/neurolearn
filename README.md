@@ -42,6 +42,8 @@
 - Git (pentru clonarea repository-ului)
 - Acces la un terminal (Command Prompt, PowerShell, Terminal etc.)
 
+---
+
 ##  Instrucțiuni de instalare (local)
 
 1. Clonează proiectul:
