@@ -207,93 +207,245 @@ export default function DocumentationPage() {
                   <h4>Tabele principale</h4>
                   <pre className="bg-muted p-4 rounded-md overflow-auto">
                     {`
--- Utilizatori (extinde tabela auth.users din Supabase)
-user_profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id),
-  first_name TEXT,
-  last_name TEXT,
-  learning_style TEXT,
-  xp INTEGER DEFAULT 0,
-  last_activity_date DATE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-)
+--profiles--
+create table public.profiles (
+  id uuid not null,
+  first_name text null,
+  last_name text null,
+  full_name text null,
+  learning_style text null,
+  bio text null,
+  role text null default 'student'::text,
+  xp integer null default 0,
+  streak integer null default 0,
+  last_activity_date date null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint profiles_pkey primary key (id),
+  constraint profiles_id_fkey foreign KEY (id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
 
--- Lecții
-lessons (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title TEXT NOT NULL,
-  description TEXT,
-  content TEXT,
-  path TEXT UNIQUE NOT NULL,
-  order_index INTEGER,
-  category TEXT,
-  tags TEXT[],
-  xp_reward INTEGER DEFAULT 10,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-)
+create index IF not exists profiles_role_idx on public.profiles using btree (role) TABLESPACE pg_default;
 
--- Progres lecții
-lesson_progress (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
-  completed BOOLEAN DEFAULT FALSE,
-  completion_date TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, lesson_id)
-)
+create index IF not exists profiles_learning_style_idx on public.profiles using btree (learning_style) TABLESPACE pg_default;
 
--- Grupuri
-groups (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  description TEXT,
-  join_code TEXT UNIQUE,
-  is_public BOOLEAN DEFAULT FALSE,
-  created_by UUID REFERENCES auth.users(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-)
+create index IF not exists profiles_xp_idx on public.profiles using btree (xp desc) TABLESPACE pg_default;
 
--- Membri grup
-group_members (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  role TEXT DEFAULT 'member',
-  joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(group_id, user_id)
-)
+create index IF not exists profiles_streak_idx on public.profiles using btree (streak desc) TABLESPACE pg_default;
 
--- Sarcini
-tasks (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  description TEXT,
-  status TEXT DEFAULT 'todo',
-  task_priority TEXT DEFAULT 'medium',
-  due_date TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-)
 
--- Jurnal activitate
-activity_log (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  activity_type TEXT NOT NULL,
-  details JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-)
+--lessons--
+create table public.lessons (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  title text not null,
+  description text null,
+  content text null,
+  content_path text null,
+  difficulty text null default 'beginner'::text,
+  xp_reward integer null default 10,
+  estimated_duration integer null default 15,
+  category text null,
+  tags text[] null,
+  is_published boolean null default false,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  created_by uuid null,
+  constraint lessons_pkey primary key (id),
+  constraint lessons_created_by_fkey foreign KEY (created_by) references auth.users (id) on delete set null
+) TABLESPACE pg_default;
 
--- Insigne utilizator
-user_badges (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  badge_id TEXT NOT NULL,
-  earned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, badge_id)
-)
+create index IF not exists lessons_is_published_idx on public.lessons using btree (is_published) TABLESPACE pg_default;
+
+create index IF not exists lessons_difficulty_idx on public.lessons using btree (difficulty) TABLESPACE pg_default;
+
+create index IF not exists lessons_category_idx on public.lessons using btree (category) TABLESPACE pg_default;
+
+create index IF not exists lessons_created_by_idx on public.lessons using btree (created_by) TABLESPACE pg_default;
+
+
+--tasks--
+create table public.tasks (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  user_id uuid not null,
+  title text not null,
+  description text null,
+  status text not null default 'todo'::text,
+  task_priority text not null default 'medium'::text,
+  due_date timestamp with time zone null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint tasks_pkey primary key (id),
+  constraint tasks_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint tasks_priority_check check (
+    (
+      task_priority = any (array['low'::text, 'medium'::text, 'high'::text])
+    )
+  ),
+  constraint tasks_status_check check (
+    (
+      status = any (
+        array['todo'::text, 'in-progress'::text, 'done'::text]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists tasks_user_id_idx on public.tasks using btree (user_id) TABLESPACE pg_default;
+
+create index IF not exists tasks_status_idx on public.tasks using btree (status) TABLESPACE pg_default;
+
+create index IF not exists tasks_priority_idx on public.tasks using btree (task_priority) TABLESPACE pg_default;
+
+create index IF not exists tasks_due_date_idx on public.tasks using btree (due_date) TABLESPACE pg_default;
+
+
+--lessons progress--
+create table public.lesson_progress (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  user_id uuid null,
+  lesson_id uuid null,
+  completed boolean null default false,
+  progress_percentage integer null default 0,
+  time_spent integer null default 0,
+  completed_at timestamp with time zone null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint lesson_progress_pkey primary key (id),
+  constraint lesson_progress_user_id_lesson_id_key unique (user_id, lesson_id),
+  constraint lesson_progress_lesson_id_fkey foreign KEY (lesson_id) references lessons (id) on delete CASCADE,
+  constraint lesson_progress_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists lesson_progress_user_id_idx on public.lesson_progress using btree (user_id) TABLESPACE pg_default;
+
+create index IF not exists lesson_progress_lesson_id_idx on public.lesson_progress using btree (lesson_id) TABLESPACE pg_default;
+
+create index IF not exists lesson_progress_completed_idx on public.lesson_progress using btree (completed) TABLESPACE pg_default;
+
+create index IF not exists lesson_progress_user_completed_idx on public.lesson_progress using btree (user_id, completed) TABLESPACE pg_default;
+
+
+--jurnal--
+create table public.journal_entries (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  user_id uuid not null,
+  title text not null,
+  content text not null,
+  mood integer null default 3,
+  study_method text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint journal_entries_pkey primary key (id),
+  constraint journal_entries_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists journal_entries_user_id_idx on public.journal_entries using btree (user_id) TABLESPACE pg_default;
+
+create index IF not exists journal_entries_created_at_idx on public.journal_entries using btree (created_at desc) TABLESPACE pg_default;
+
+
+--groups--
+create table public.groups (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  name text not null,
+  description text null,
+  is_private boolean null default false,
+  invite_code text not null,
+  created_at timestamp with time zone null default now(),
+  created_by uuid null,
+  constraint groups_pkey primary key (id),
+  constraint groups_invite_code_key unique (invite_code),
+  constraint groups_created_by_fkey foreign KEY (created_by) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists groups_is_private_idx on public.groups using btree (is_private) TABLESPACE pg_default;
+
+create index IF not exists groups_invite_code_idx on public.groups using btree (invite_code) TABLESPACE pg_default;
+
+create index IF not exists groups_created_by_idx on public.groups using btree (created_by) TABLESPACE pg_default;
+
+
+--group posts--
+create table public.group_posts (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  group_id uuid not null,
+  user_id uuid not null,
+  content text not null,
+  created_at timestamp with time zone null default now(),
+  likes integer null default 0,
+  comments integer null default 0,
+  constraint group_posts_pkey primary key (id),
+  constraint group_posts_group_id_fkey foreign KEY (group_id) references groups (id) on delete CASCADE,
+  constraint group_posts_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists group_posts_group_id_idx on public.group_posts using btree (group_id) TABLESPACE pg_default;
+
+create index IF not exists group_posts_user_id_idx on public.group_posts using btree (user_id) TABLESPACE pg_default;
+
+create index IF not exists group_posts_created_at_idx on public.group_posts using btree (created_at desc) TABLESPACE pg_default;
+
+
+--group members--
+create table public.group_members (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  group_id uuid null,
+  user_id uuid null,
+  role text not null default 'member'::text,
+  joined_at timestamp with time zone null default now(),
+  constraint group_members_pkey primary key (id),
+  constraint group_members_group_id_user_id_key unique (group_id, user_id),
+  constraint group_members_group_id_fkey foreign KEY (group_id) references groups (id) on delete CASCADE,
+  constraint group_members_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists group_members_group_id_idx on public.group_members using btree (group_id) TABLESPACE pg_default;
+
+create index IF not exists group_members_user_id_idx on public.group_members using btree (user_id) TABLESPACE pg_default;
+
+create index IF not exists group_members_role_idx on public.group_members using btree (role) TABLESPACE pg_default;
+
+
+--goals--
+create table public.goals (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  user_id uuid not null,
+  title text not null,
+  description text null,
+  deadline timestamp with time zone null,
+  completed boolean null default false,
+  xp_reward integer null default 50,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint goals_pkey primary key (id),
+  constraint goals_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists goals_user_id_idx on public.goals using btree (user_id) TABLESPACE pg_default;
+
+create index IF not exists goals_completed_idx on public.goals using btree (completed) TABLESPACE pg_default;
+
+create index IF not exists goals_deadline_idx on public.goals using btree (deadline) TABLESPACE pg_default;
+
+
+--user settings - pomodoro timer--
+create table public.user_settings (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  user_id uuid not null,
+  focus_duration integer null default 25,
+  short_break_duration integer null default 5,
+  long_break_duration integer null default 15,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint user_settings_pkey primary key (id),
+  constraint user_settings_user_id_key unique (user_id),
+  constraint user_settings_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists user_settings_user_id_idx on public.user_settings using btree (user_id) TABLESPACE pg_default;
+
+
+
                     `}
                   </pre>
 
