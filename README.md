@@ -59,3 +59,5 @@
     npm run dev
 5. Accesează aplicația la http://localhost:3000
 
+---
+A fost folosita inteligenta artificiala pentru a optimiza api-urile
